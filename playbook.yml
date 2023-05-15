@@ -1,0 +1,9 @@
+- name: Deploy Apache using kubectl
+  hosts: localhost
+  become: true
+  vars:
+    ansible_become_password: abc123!
+  tasks:
+  - name: Execute deploy.sh
+    become: true
+    shell: /home/ccs2/test/deploy.sh

@@ -1,0 +1,7 @@
+localhost:
+  hosts:
+    server1:
+      ansible_host: 172.26.192.122
+      ansible_port: 22
+      ansible_ssh_user: ccs2
+      ansible_ssh_pass: abc123!
