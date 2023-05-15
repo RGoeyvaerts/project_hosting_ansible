@@ -1,6 +1,10 @@
 # project_hosting_ansible
 install ansible
+
+
 sudo apt-get install ansible
+
+
 install rancher cli :
 
 
