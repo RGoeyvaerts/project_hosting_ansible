@@ -1,34 +1,160 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: apache
-  labels:
-    app: apache
+  name: laravel-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: apache
+      app: laravel-app
   template:
     metadata:
       labels:
-        app: apache
+        app: laravel-app
     spec:
       containers:
-      - name: apache
-        image: ubuntu/apache2
-        ports:
-        - containerPort: 80
+        - name: laravel-app-container
+          image: jonasdeweerdt/laravel_docker:latest
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nfs-volume
+              mountPath: /var/www/html/
+            - name: apache-config-volume
+              mountPath: /etc/apache2/sites-enabled/
+              configMap:
+                name: config-apache
+      volumes:
+        - name: nfs-volume
+          nfs:
+            server: 172.26.192.151
+            path: /mnt/myshareddir/2022-ProjectPHP-202
+        - name: apache-config-volume
+          configMap:
+            name: config-apache
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-app
+  template:
+    metadata:
+      labels:
+        app: mysql-app
+    spec:
+      containers:
+        - name: mysql-container
+          image: mysql:latest
+          volumeMounts:
+            - name: vol-mysql
+              mountPath: /var/lib/mysql
+            - name: mysql-data-volume
+              mountPath: /root
+          securityContext:
+            privileged: true
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: password
+
+          ports:
+            - containerPort: 3306
+
+          entrypoint: ["/var/www/html/docker-entrypoint.sh"]
+          #command:
+          #  - bash
+          #  - -c
+          #  - |
+          #    mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS ProjectPHP; USE ProjectPHP; source /root/BPOB.sql;"
+      volumes:
+        - name: mysql-data-volume
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+        - emptyDir: {}
+          name: vol-mysql
+        #- name: mysql-nfs-volume
+        #  nfs:
+        #    path: /mnt/myshareddir/mysql-data/
+        #    server: 172.26.192.151
+#
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: apache-service
+  name: laravel-app-service
 spec:
   selector:
-    app: apache
-  type: NodePort
+    app: laravel-app
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 80
+    - name: http-laravel
+      protocol: TCP
+      port: 80
+      targetPort: 80
+  type: NodePort
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-apache
+data:
+  apache.conf: |
+    <VirtualHost *:80>
+    ServerAdmin admin@techvblogs.com
+    ServerName 0.0.0.0
+    DocumentRoot /var/www/html/public
+
+    <Directory /var/www/html>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+    </VirtualHost>
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    path: /mnt/myshareddir/mysql-data/
+    server: 172.26.192.151
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+spec:
+  selector:
+    app: mysql-app
+  ports:
+    - name: mysql
+      protocol: TCP
+      port: 3306
+      targetPort: 3306
+  type: NodePort
