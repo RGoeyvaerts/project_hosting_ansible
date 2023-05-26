@@ -2,11 +2,11 @@
 
 # Define the Rancher server URL and API token
 RANCHER_URL="https://172.26.192.122/v3"
-RANCHER_TOKEN="token-r8fmt:5xmnxh79pbrj46j64xhp4k9htxpg58lnzwtqwmstcjm98nl4p24bqn"
-RANCHER_CONTEXT="Cluster:ansibletest Project:Default"
+RANCHER_TOKEN="token-rfkd4:df4vjwljfsqv6bdqf5xqxh4rkcmlm9psr8r92xnpvqj4dhvjtg98hh"
+RANCHER_CONTEXT="c-kkg76:p-npzdc"
 
 # Log in to Rancher
-/home/ccs2/rancher-v2.7.0/rancher login --context c-wblfd:p-knftf --token $RANCHER_TOKEN --skip-verify $RANCHER_URL
+/usr/local/bin/rancher login --context $RANCHER_CONTEXT --token $RANCHER_TOKEN --skip-verify $RANCHER_URL
 
 # Execute the command with Rancher kubectl
-/home/ccs2/rancher-v2.7.0/rancher kubectl create -f /home/ccs2/test/apache-deployment.yaml --validate=false
+/usr/local/bin/rancher kubectl create -f /home/ccs2/test/apache-deployment.yaml --validate=false
